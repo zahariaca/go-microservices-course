@@ -15,3 +15,5 @@
 # vendor/
 
 project/db-data/
+
+.idea
