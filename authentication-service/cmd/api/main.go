@@ -1,9 +1,9 @@
 package main
 
 import (
-	"authentication/data"
 	"database/sql"
 	"fmt"
+	"github.com/zahariaca/authentication/data"
 	"log"
 	"net/http"
 	"os"

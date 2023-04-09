@@ -1,4 +1,4 @@
-module authentication
+module  github.com/zahariaca/authentication
 
 go 1.20
 
