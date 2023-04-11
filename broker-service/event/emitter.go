@@ -26,7 +26,7 @@ func (e *Emitter) Push(event string, severity string) error {
 	}
 	defer channel.Close()
 
-	log.Println("Pushing to channel")
+	log.Println("Pushing to channel:", event, "with severity:", severity)
 
 	err = channel.Publish(
 		"logs_topic",
