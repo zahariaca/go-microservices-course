@@ -2,13 +2,18 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/zahariaca/broker/event"
+	"github.com/zahariaca/broker/logs"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"net/http"
 	"net/rpc"
+	"time"
 
 	"github.com/zahariaca/toolbox"
 )
@@ -262,6 +267,48 @@ func (app *Config) logViaRPC(w http.ResponseWriter, entry LogPayload) {
 	payload := toolbox.JsonResponse{
 		Error:   false,
 		Message: result,
+	}
+
+	tools.WriteJson(w, http.StatusAccepted, payload)
+}
+
+func (app *Config) logViagRPC(w http.ResponseWriter, r *http.Request) {
+	var requestPayload RequestPayload
+
+	err := tools.ReadJson(w, r, &requestPayload)
+	if err != nil {
+		tools.ErrorJson(w, err)
+		return
+	}
+
+	conn, err := grpc.Dial(
+		"logger-service:50001",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock())
+	if err != nil {
+		tools.ErrorJson(w, err)
+		return
+	}
+	defer conn.Close()
+
+	c := logs.NewLogServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	_, err = c.WriteLog(ctx, &logs.LogRequest{
+		LogEntry: &logs.Log{
+			Name: requestPayload.Log.Name,
+			Data: requestPayload.Log.Data,
+		},
+	})
+	if err != nil {
+		tools.ErrorJson(w, err)
+		return
+	}
+
+	payload := toolbox.JsonResponse{
+		Error:   false,
+		Message: "logged via gRPC",
 	}
 
 	tools.WriteJson(w, http.StatusAccepted, payload)

@@ -49,10 +49,13 @@ func main() {
 		Models: data.New(client),
 	}
 
-	// start rpc server
+	// start RPC server
 	// Register the RPC Server
 	err = rpc.Register(new(RPCServer))
 	go app.rpcListen()
+
+	// start gRPC server
+	go app.gRPCListen()
 
 	//start webserver
 	srv := &http.Server{
