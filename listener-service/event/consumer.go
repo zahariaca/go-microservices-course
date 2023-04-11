@@ -66,6 +66,7 @@ func (consumer *Consumer) Listen(topics []string) error {
 			nil,
 		)
 		if err != nil {
+			log.Println("Error binding queue: ", queue.Name, " topic:", topic)
 			return err
 		}
 	}
@@ -79,18 +80,27 @@ func (consumer *Consumer) Listen(topics []string) error {
 		false,
 		nil,
 	)
+	if err != nil {
+		log.Println("Error on ch.Consume()")
+		return err
+	}
 
 	forever := make(chan bool)
 	go func() {
+		log.Println("Start of forever func")
 		for d := range messages {
 			var payload Payload
-			_ = json.Unmarshal(d.Body, &payload)
+			err := json.Unmarshal(d.Body, &payload)
+			if err != nil {
+				log.Println("Error unmarshalling payload:", err)
+				return
+			}
 
 			go handlePayload(payload)
 		}
 	}()
 
-	fmt.Printf("Witing for message [Exchange, Queue] [logs_topic, %s]\n", queue.Name)
+	fmt.Printf("Waiting for message [Exchange, Queue] [logs_topic, %s]\n", queue.Name)
 
 	<-forever
 
@@ -98,6 +108,7 @@ func (consumer *Consumer) Listen(topics []string) error {
 }
 
 func handlePayload(payload Payload) {
+	log.Println("handlePayload: ", payload)
 	switch payload.Name {
 	case "log", "event":
 		//log whatever we get

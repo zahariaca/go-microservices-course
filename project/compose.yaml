@@ -90,9 +90,11 @@ services:
       FROM_ADDRESS: "alex.zaharia@example.com"
 
   rabbitmq:
-    image: "rabbitmq:3.9-alpine"
+    image: "rabbitmq:3.11-management"
     ports:
       - "5672:5672"
+      - "15671:15671"
+      - "15672:15672"
     deploy:
       mode: replicated
       replicas: 1

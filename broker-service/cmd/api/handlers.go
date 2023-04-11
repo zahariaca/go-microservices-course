@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/zahariaca/broker/event"
+	"log"
 	"net/http"
+	"net/rpc"
 
 	"github.com/zahariaca/toolbox"
 )
@@ -61,6 +63,8 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 		app.logItem(w, requestPayload.Log)
 	case "logViaRabbitMQ":
 		app.logEventViaRabbit(w, requestPayload.Log)
+	case "logViaRPC":
+		app.logViaRPC(w, requestPayload.Log)
 	case "mail":
 		app.sendMail(w, requestPayload.Mail)
 
@@ -212,6 +216,7 @@ func (app *Config) logEventViaRabbit(w http.ResponseWriter, entry LogPayload) {
 func (app *Config) pushToQueue(name, msg string) error {
 	emitter, err := event.NewEventEmitter(app.Rabbit)
 	if err != nil {
+		log.Println("NewEventEmitter error: ", err)
 		return err
 	}
 
@@ -222,10 +227,42 @@ func (app *Config) pushToQueue(name, msg string) error {
 
 	jsonPayload, _ := json.MarshalIndent(payload, "", "\t")
 
-	err = emitter.Push(string(jsonPayload), "Log.INFO")
+	err = emitter.Push(string(jsonPayload), "log.INFO")
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+type RPCPayload struct {
+	Name string
+	Data string
+}
+
+func (app *Config) logViaRPC(w http.ResponseWriter, entry LogPayload) {
+	client, err := rpc.Dial("tcp", "logger-service:5001")
+	if err != nil {
+		tools.ErrorJson(w, err)
+		return
+	}
+
+	rpcPayload := RPCPayload{
+		Name: entry.Name,
+		Data: entry.Data,
+	}
+
+	var result string
+	err = client.Call("RPCServer.LogInfo", rpcPayload, &result)
+	if err != nil {
+		tools.ErrorJson(w, err)
+		return
+	}
+
+	payload := toolbox.JsonResponse{
+		Error:   false,
+		Message: result,
+	}
+
+	tools.WriteJson(w, http.StatusAccepted, payload)
 }
