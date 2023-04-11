@@ -11,6 +11,7 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+
   postgres:
     image: 'postgres:14.2'
     ports:
@@ -24,6 +25,7 @@ services:
       POSTGRES_DB: users
     volumes:
       - ./db-data/postgres/:/var/lib/postgresql/data/
+
   authentication-service:
     build:
       context: ./../authentication-service
@@ -38,6 +40,7 @@ services:
       - postgres
     environment:
       DSN: "host=postgres port=5432 user=postgres password=password dbname=users sslmode=disable timezone=UTC connect_timeout=5"
+
   mongo:
     image: 'mongo:4.2.16-bionic'
     ports:
@@ -48,6 +51,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
       - ./db-data/mongo:/data/db
+
   logger-service:
     build:
       context: ./../logger-service
@@ -58,11 +62,13 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+
   mailhog:
     image: 'mailhog/mailhog:latest'
     ports:
       - '1025:1025'
       - "8025:8025"
+
   mailer-service:
     build:
       context: ./../mailer-service
@@ -82,3 +88,21 @@ services:
       MAIL_PASSWORD: ""
       FROM_NAME: "Alex Zaharia"
       FROM_ADDRESS: "alex.zaharia@example.com"
+
+  rabbitmq:
+    image: "rabbitmq:3.9-alpine"
+    ports:
+      - "5672:5672"
+    deploy:
+      mode: replicated
+      replicas: 1
+    volumes:
+      - ./db-data/rabbitmq:/var/lib/rabbitmq/
+
+  listener-service:
+    build:
+      context: ../listener-service
+      dockerfile: ../listener-service/Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 1

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/zahariaca/broker/event"
 	"net/http"
 
 	"github.com/zahariaca/toolbox"
@@ -45,7 +46,7 @@ func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
 	_ = tools.WriteJson(w, http.StatusOK, payload)
 }
 
-func (app *Config) HandleSumbission(w http.ResponseWriter, r *http.Request) {
+func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	var requestPayload RequestPayload
 
 	err := tools.ReadJson(w, r, &requestPayload)
@@ -58,8 +59,11 @@ func (app *Config) HandleSumbission(w http.ResponseWriter, r *http.Request) {
 		app.authenticate(w, requestPayload.Auth)
 	case "log":
 		app.logItem(w, requestPayload.Log)
+	case "logViaRabbitMQ":
+		app.logEventViaRabbit(w, requestPayload.Log)
 	case "mail":
 		app.sendMail(w, requestPayload.Mail)
+
 	default:
 		tools.ErrorJson(w, errors.New("unknown action"))
 	}
@@ -185,4 +189,43 @@ func (app *Config) sendMail(w http.ResponseWriter, mail MailPayload) {
 	}
 
 	tools.WriteJson(w, http.StatusAccepted, payload)
+}
+
+func (app *Config) logEventViaRabbit(w http.ResponseWriter, entry LogPayload) {
+	err := app.pushToQueue(entry.Name, entry.Data)
+
+	if err != nil {
+		tools.ErrorJson(w, err)
+	}
+
+	payload := toolbox.JsonResponse{
+		Error:   false,
+		Message: "logged via RabbitMQ",
+	}
+
+	err = tools.WriteJson(w, http.StatusAccepted, payload)
+	if err != nil {
+		return
+	}
+}
+
+func (app *Config) pushToQueue(name, msg string) error {
+	emitter, err := event.NewEventEmitter(app.Rabbit)
+	if err != nil {
+		return err
+	}
+
+	payload := LogPayload{
+		Name: name,
+		Data: msg,
+	}
+
+	jsonPayload, _ := json.MarshalIndent(payload, "", "\t")
+
+	err = emitter.Push(string(jsonPayload), "Log.INFO")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
