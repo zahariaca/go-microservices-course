@@ -40,6 +40,11 @@
 
 {{define "js"}}
     <script>
+        const brokerUrl = {{.BrokerUrl}};
+        const backendHandle = brokerUrl + "/handle";
+        const backendgRPC = brokerUrl + "/log-grpc";
+        console.log("backendhanlde", backendHandle)
+        console.log("backendgRPC", backendgRPC)
         let brokerBtn = document.getElementById("brokerBtn");
         let authBrokerBtn = document.getElementById("authBrokerBtn");
         let logBtn = document.getElementById("logBtn");
@@ -55,8 +60,8 @@
             const body = {
                 method: 'POST',
             };
-
-            fetch("http:\/\/localhost:8080", body)
+            console.log("before fetch")
+            fetch(brokerUrl, body)
                 .then(response => response.json())
                 .then(data => {
                     sent.innerHTML = "empty post request";
@@ -91,7 +96,7 @@
                 headers: headers,
             }
 
-            fetch("http:\/\/localhost:8080/handle", body)
+            fetch(backendHandle, body)
                 .then(response => response.json())
                 .then(data => {
                     sent.innerHTML = JSON.stringify(payload, undefined, 4);
@@ -126,7 +131,7 @@
                 headers: headers,
             }
 
-            fetch("http:\/\/localhost:8080/handle", body)
+            fetch(backendHandle, body)
                 .then(response => response.json())
                 .then(data => {
                     sent.innerHTML = JSON.stringify(payload, undefined, 4);
@@ -142,6 +147,7 @@
                     output.innerHTML += "<br><br>Error: " + error;
                 });
         })
+
 
         logViaRabbitMQ.addEventListener("click", function () {
             const payload = {
@@ -161,7 +167,7 @@
                 headers: headers,
             }
 
-            fetch("http:\/\/localhost:8080/handle", body)
+            fetch(backendHandle, body)
                 .then(response => response.json())
                 .then(data => {
                     sent.innerHTML = JSON.stringify(payload, undefined, 4);
@@ -196,7 +202,7 @@
                 headers: headers,
             }
 
-            fetch("http:\/\/localhost:8080/handle", body)
+            fetch(backendHandle, body)
                 .then(response => response.json())
                 .then(data => {
                     sent.innerHTML = JSON.stringify(payload, undefined, 4);
@@ -230,7 +236,7 @@
                 headers: headers,
             }
 
-            fetch("http:\/\/localhost:8080/log-grpc", body)
+            fetch(backendgRPC, body)
                 .then(response => response.json())
                 .then(data => {
                     sent.innerHTML = JSON.stringify(payload, undefined, 4);
@@ -267,7 +273,7 @@
                 headers: headers,
             }
 
-            fetch("http:\/\/localhost:8080/handle", body)
+            fetch(backendHandle, body)
                 .then(response => response.json())
                 .then(data => {
                     sent.innerHTML = JSON.stringify(payload, undefined, 4);

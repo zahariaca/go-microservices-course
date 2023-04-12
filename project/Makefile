@@ -1,4 +1,4 @@
-FRONT_END_BINARY=frontApp
+FE_BINARY=frontEndApp
 BROKER_BINARY=brokerApp
 AUTH_BINARY=authApp
 LOGGER_BINARY=loggerApp
@@ -25,16 +25,16 @@ down:
 	docker-compose down
 	@echo "Done!"
 
+## build_fe: builds the front end binary as a linux executable
+build_fe:
+	@echo "Building front end binary..."
+	cd ../front-end && env GOOS=linux CGO_ENABLED=0 go build -o ${FE_BINARY} ./cmd/web
+	@echo "Done!"
+
 ## build_broker: builds the broker binary as a linux executable
 build_broker:
 	@echo "Building broker binary..."
 	cd ../broker-service && env GOOS=linux CGO_ENABLED=0 go build -o ${BROKER_BINARY} ./cmd/api
-	@echo "Done!"
-
-## build_front: builds the frone end binary
-build_front:
-	@echo "Building front end binary..."
-	cd ../front-end && env CGO_ENABLED=0 go build -o ${FRONT_END_BINARY} ./cmd/web
 	@echo "Done!"
 
 ## build_auth: builds the authentication-service binary as a linux executable
